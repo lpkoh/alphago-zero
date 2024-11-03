@@ -52,3 +52,6 @@ python3 bootstrap.py \
   --export_path /volume/outputs/models/bootstrap \
   --create_bootstrap True
 ```
+
+### Self play
+
