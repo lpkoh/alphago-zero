@@ -6,6 +6,6 @@ AlphaGo Zero is trained through self-play reinforcement learning, starting from 
 
 ### Key Features:
 - Neural Network Outputs:
-p: A vector of move probabilities, including the option to pass.
-v: A scalar evaluation representing the probability of winning from the current board position.
+-- p: A vector of move probabilities, including the option to pass.
+-- v: A scalar evaluation representing the probability of winning from the current board position.
 Network Architecture: Consists of numerous residual blocks with convolutional layers, batch normalization, and rectified non-linearities.
