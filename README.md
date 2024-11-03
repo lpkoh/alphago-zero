@@ -23,16 +23,26 @@ Go through this loop:
 
 ## Training implementation
 We walk through the implementation of Alphago Zero here. An overview:
-1. Bootstrap model: bootstrap.py initializes a model with random weights. Run this once, then run steps 2-4 in a loop until satisfied.
+1. Bootstrap initial model: bootstrap.py initializes a model with random weights. Run this once, then run steps 2-4 in a loop until satisfied.
 2. Self play: selfplay.py
 3. Training: 
 4. Evaluation:
 
 ### Setup
 ```shell
-# Run the bootstrap script
-python bootstrap.py
+# Clone the AlphaGo Zero repository from GitHub
+git clone https://github.com/lpkoh/alphago-zero.git
+
+# Navigate into the cloned repository directory
+cd alphago-zero
 
 # Build the Docker image
-docker build .
+# -t flag tags the image with the name 'alphago-zero'
+docker build . -t alphago-zero
+
+# Run the container interactively with volume mounting
+docker run -it -v "$(pwd)/volume:/volume" alphago-zero /bin/bash
 ```
+
+### Bootstrap
+Initializes your working directory for the trainer and a random model. This random model is also exported to --model-save-path so that selfplay can immediately start playing with this random model. If these directories don't exist, bootstrap will create them for you.
