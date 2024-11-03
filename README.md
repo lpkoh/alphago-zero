@@ -8,11 +8,11 @@ AlphaGo Zero is trained through self-play reinforcement learning, starting from 
 - Neural Network takes a board position s and outputs:
   - p: A vector of move probabilities, including the option to pass.
   - v: A scalar evaluation representing the probability of winning from the current board position.
-- Uses a Monte Carlo tree search that uses this single neural network to evaluate position and sample moves
+- Uses a Monte Carlo tree search that uses this single neural network to evaluate position and sample moves.
 
 ### Reinforcement learning algorithm:
 - In each position s, Monte Carlo Tree Search (MCTS) is executed, guided by the neural network, which outputs probabilities for each move. These search probabilities are typically much stronger than the raw move probabilities p directly provided by the neural network. As such, MCTS can be seen as a policy improvement operator.
-- The game winner `z` serves as a sample for the value, functioning as a policy evaluation operator.
+- Self play with search, using improved MCTS based policy to select each move, then using the game winner z as a sample of the value, can be viewed as a policy evaluation operator.
 - The primary concept of the reinforcement learning algorithm is to use these search operators in policy iteration, continuously updating the neural network parameters so that (p, v) closely matches the enhanced search probabilities and self-play outcomes.
 
 ### Self-Play Training Pipeline
@@ -20,3 +20,7 @@ Go through this loop:
 - Self-Play: Generate training data by playing games using the latest model.
 - Optimize the Neural Network: Continuously train on data generated through self-play.
 - Evaluator: Assess each new neural network checkpoint against the current best model to ensure high-quality data generation.
+
+## Implementation
+We walk through the implementation of Alphago Zero here.
+- First
