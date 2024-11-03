@@ -46,3 +46,6 @@ docker run -it -v "$(pwd)/volume:/volume" alphago-zero /bin/bash
 
 ### Bootstrap
 Initializes your working directory for the trainer and a random model. This random model is also exported to --model-save-path so that selfplay can immediately start playing with this random model. If these directories don't exist, bootstrap will create them for you.
+```shell
+python3 bootstrap.py --work_dir /volume/work_dir --export_path /volume/outputs/models/bootstrap --create_bootstrap True
+```
