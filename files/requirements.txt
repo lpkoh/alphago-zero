@@ -1,0 +1,10 @@
+absl-py
+choix>=0.3.3
+keras
+numpy>=1.14.0
+protobuf==3.20.0
+sgf==0.5
+six
+tqdm>=4.17
+setuptools>=34.0.0
+tensorflow==1.15.0
