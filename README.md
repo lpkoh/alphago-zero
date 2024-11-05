@@ -45,7 +45,7 @@ docker run -it -v "$(pwd)/volume:/volume" alphago-zero /bin/bash
 ```
 
 ### Bootstrap
-Initializes your working directory for the trainer and a random model. This random model is also exported to --model-save-path so that selfplay can immediately start playing with this random model. If these directories don't exist, bootstrap will create them for you.
+Initializes your working directory for the trainer and a random model. If these directories don't exist, bootstrap will create them for you.
 ```shell
 python3 bootstrap.py \
   --work_dir /volume/work_dir \
@@ -54,4 +54,20 @@ python3 bootstrap.py \
 ```
 
 ### Self play
+This command starts self-playing, outputting its raw game data as tf.Examples as well as in SGF form in the directories.
+```shell
+python3 selfplay.py \
+  --load_file=/volume/outputs/models/bootstrap \
+  --selfplay_dir=/volume/outputs/data/selfplay \
+  --holdout_dir=/volume/outputs/data/holdout \
+  --sgf_dir=/volume/outputs/sgf
+```
 
+### Training
+This command takes a directory of tf.Example files from selfplay and trains a new model, starting from the latest model weights in the estimator_working_dir parameter.
+```shell
+python3 train.py \
+  outputs/data/selfplay/* \
+  --work_dir=estimator_working_dir \
+  --export_path=outputs/models/000001-first_generation
+```
