@@ -67,7 +67,7 @@ python3 selfplay.py \
 This command takes a directory of tf.Example files from selfplay and trains a new model, starting from the latest model weights in the estimator_working_dir parameter.
 ```shell
 python3 train.py \
-  outputs/data/selfplay/* \
-  --work_dir=estimator_working_dir \
-  --export_path=outputs/models/000001-first_generation
+  /volume/output/data/selfplay/* \
+  --work_dir=/volume/work_dir \
+  --export_path=/volume/output/models/000001
 ```
