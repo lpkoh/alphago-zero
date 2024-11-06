@@ -11,10 +11,10 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """Python implementation of selfplay worker.
 
 This worker is used to set up many parallel selfplay instances."""
-
 
 import random
 import os

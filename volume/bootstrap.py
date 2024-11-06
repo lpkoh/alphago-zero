@@ -11,6 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+
 """Bootstrap network weights.
 
 Usage:
@@ -37,16 +38,10 @@ FLAGS = flags.FLAGS
 
 def main(unused_argv):
     """Bootstrap random weights."""
-    print('Checking directory exists')
     utils.ensure_dir_exists(os.path.dirname(FLAGS.export_path))
-    print('Export directory exists')
     if FLAGS.create_bootstrap:
-        print('Initating bootstrap')
         dual_net.bootstrap()
-        print('Bootstrap complete')
-    print('Exporting model')
     dual_net.export_model(FLAGS.export_path)
-    print('Model exported')
 
 if __name__ == '__main__':
     flags.mark_flags_as_required(['work_dir', 'export_path'])

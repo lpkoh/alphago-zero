@@ -1,3 +1,23 @@
+# Copyright 2018 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+"""
+The policy and value networks share a majority of their architecture.
+This helps the intermediate layers extract concepts that are relevant to both
+move prediction and score estimation.
+"""
+
 from absl import flags
 import go
 import features as features_lib
@@ -13,9 +33,7 @@ from tensorflow.contrib import summary as contrib_summary
 from tensorflow.contrib.tpu.python.tpu import tpu_estimator as contrib_tpu_python_tpu_tpu_estimator
 
 flags.DEFINE_integer('train_batch_size', 256,
-                     'Batch size to use for train/eval evaluation. For GPU '
-                     'this is batch size as expected. If \"use_tpu\" is set,'
-                     'final batch size will be = train_batch_size * num_tpu_cores')
+                     'Batch size to use for train/eval evaluation. For GPU')
 flags.DEFINE_integer('conv_width', 256 if go.N == 19 else 32,
                      'The width of each conv layer in the shared trunk.')
 flags.DEFINE_integer('policy_conv_width', 2,
@@ -165,64 +183,42 @@ def get_inference_input():
              'value_tensor': tf.placeholder(tf.float32, [None])})
 
 def model_fn(features, labels, mode, params):
-    print("Running model inference fn")
     policy_output, value_output, logits = model_inference_fn(
         features, mode == tf.estimator.ModeKeys.TRAIN, params)
-    print("Model inference fn run")
 
-    print("Creating policy cost")
     policy_cost = tf.reduce_mean(
         tf.nn.softmax_cross_entropy_with_logits_v2(
             logits=logits, labels=tf.stop_gradient(labels['pi_tensor'])))
-    print("Policy cost created")
 
-    print("Creating value cost")
     value_cost = params['value_cost_weight'] * tf.reduce_mean(
         tf.square(value_output - labels['value_tensor']))
-    print("Value cost created")
 
-    print("Creating regularization cost")
     reg_vars = [v for v in tf.trainable_variables()
                 if 'bias' not in v.name and 'beta' not in v.name]
     l2_cost = params['l2_strength'] * \
         tf.add_n([tf.nn.l2_loss(v) for v in reg_vars])
-    print("Regularization cost created")
 
-    print("Creating combined cost")
     combined_cost = policy_cost + value_cost + l2_cost
-    print("Combined cost created")
 
-    print("Creating global step")
     global_step = tf.train.get_or_create_global_step()
-    print("Global step created")
 
-    print("Creating learning rate")
     learning_rate = tf.train.piecewise_constant(
         global_step, params['lr_boundaries'], params['lr_rates'])
-    print("Learning rate created")
 
-    print("Creating update ops")
     update_ops = tf.get_collection(tf.GraphKeys.UPDATE_OPS)
-    print("Update ops created")
 
-    print("Creating quantize")
     if params['quantize']:
         if mode == tf.estimator.ModeKeys.TRAIN:
             contrib_quantize.create_training_graph(
                 quant_delay=params['quant_delay'])
         else:
             contrib_quantize.create_eval_graph()
-    print("Quantize created")
 
-    print("Creating optimizer")
     optimizer = tf.train.MomentumOptimizer(
         learning_rate, params['sgd_momentum'])
-    print("Optimizer created")
 
-    print("Creating train op")
     with tf.control_dependencies(update_ops):
         train_op = optimizer.minimize(combined_cost, global_step=global_step)
-    print("Train op created")
 
     # Computations to be executed on CPU, outside of the main TPU queues.
     def eval_metrics_host_call_fn(policy_output, value_output, pi_tensor,
@@ -265,32 +261,22 @@ def model_fn(features, labels, mode, params):
             }
 
         if est_mode == tf.estimator.ModeKeys.EVAL:
-            print("Returning metric ops")
             return metric_ops
 
-        print("Creating eval step")
         eval_step = tf.reduce_min(step)
-        print("Eval step created")
 
-        print("Creating summary writer")
         summary_writer = contrib_summary.create_file_writer(FLAGS.work_dir)
-        print("Summary writer created")
 
-        print("Creating summary ops")
         with summary_writer.as_default(), contrib_summary.record_summaries_every_n_global_steps(params['summary_steps'], eval_step):
             for metric_name, metric_op in metric_ops.items():
                 contrib_summary.scalar(metric_name, metric_op[1], step=eval_step)
-        print("Summary ops created")
 
-        print("Creating reset op")
         reset_op = tf.variables_initializer(tf.local_variables('metrics'))
         cond_reset_op = tf.cond(
             tf.equal(eval_step % params['summary_steps'], tf.to_int64(1)),
             lambda: reset_op,
             lambda: tf.no_op())
-        print("Reset op created")
 
-        print("Returning summary ops")
         return contrib_summary.all_summary_ops() + [cond_reset_op]
 
     metric_args = [
@@ -336,7 +322,6 @@ def model_inference_fn(features, training, params):
         bn_axis = 1
         data_format = 'channels_first'
 
-    print("Creating batch normalization")
     mg_batchn = functools.partial(
         tf.layers.batch_normalization,
         axis=bn_axis,
@@ -346,9 +331,7 @@ def model_inference_fn(features, training, params):
         scale=True,
         fused=True,
         training=training)
-    print("Batch normalization created")
 
-    print("Creating conv2d")
     mg_conv2d = functools.partial(
         tf.layers.conv2d,
         filters=params['conv_width'],
@@ -356,40 +339,30 @@ def model_inference_fn(features, training, params):
         padding='same',
         use_bias=False,
         data_format=data_format)
-    print("Conv2d created")
 
-    print("Creating global average pooling 2d")
     mg_global_avgpool2d = functools.partial(
         tf.layers.average_pooling2d,
         pool_size=go.N,
         strides=1,
         padding='valid',
         data_format=data_format)
-    print("Global average pooling 2d created")
 
-    print("Creating activation")
     def mg_activation(inputs):
         if FLAGS.use_swish:
             return tf.nn.swish(inputs)
         return tf.nn.relu(inputs)
-    print("Activation created")
 
-    print("Creating residual inner")
     def residual_inner(inputs):
         conv_layer1 = mg_batchn(mg_conv2d(inputs))
         initial_output = mg_activation(conv_layer1)
         conv_layer2 = mg_batchn(mg_conv2d(initial_output))
         return conv_layer2
-    print("Residual inner created")
 
-    print("Creating residual layer")
     def mg_res_layer(inputs):
         residual = residual_inner(inputs)
         output = mg_activation(inputs + residual)
         return output
-    print("Residual layer created")
 
-    print("Creating squeeze excitation layer")
     def mg_squeeze_excitation_layer(inputs):
         channels = params['conv_width']
         ratio = FLAGS.SE_ratio
@@ -412,57 +385,40 @@ def model_inference_fn(features, training, params):
 
         excitation = tf.multiply(scale, residual) + bias
         return mg_activation(inputs + excitation)
-    print("Squeeze excitation layer created")
 
-    print("Creating initial block")
     initial_block = mg_activation(mg_batchn(mg_conv2d(features)))
-    print("Initial block created")
 
-    print("Creating shared output")
     shared_output = initial_block
     for _ in range(params['trunk_layers']):
         if FLAGS.use_SE or FLAGS.use_SE_bias:
             shared_output = mg_squeeze_excitation_layer(shared_output)
         else:
             shared_output = mg_res_layer(shared_output)
-    print("Shared output created")
 
-    print("Creating policy conv")
     policy_conv = mg_conv2d(
         shared_output, filters=params['policy_conv_width'], kernel_size=1)
     policy_conv = mg_activation(
         mg_batchn(policy_conv, center=False, scale=False))
-    print("Policy conv created")
 
-    print("Creating logits")
     logits = tf.layers.dense(
         tf.reshape(
             policy_conv, [-1, params['policy_conv_width'] * go.N * go.N]),
         go.N * go.N + 1)
-    print("Logits created")
 
-    print("Creating policy output")
     policy_output = tf.nn.softmax(logits, name='policy_output')
-    print("Policy output created")
 
-    print("Creating value conv")
     value_conv = mg_conv2d(
         shared_output, filters=params['value_conv_width'], kernel_size=1)
     value_conv = mg_activation(
         mg_batchn(value_conv, center=False, scale=False))
-    print("Value conv created")
 
-    print("Creating value fc hidden")
     value_fc_hidden = mg_activation(tf.layers.dense(
         tf.reshape(value_conv, [-1, params['value_conv_width'] * go.N * go.N]),
         params['fc_width']))
-    print("Value fc hidden created")
 
-    print("Creating value output")
     value_output = tf.nn.tanh(
         tf.reshape(tf.layers.dense(value_fc_hidden, 1), [-1]),
         name='value_output')
-    print("Value output created")
 
     return policy_output, value_output, logits
 
@@ -489,41 +445,22 @@ def _get_nontpu_estimator():
         params=FLAGS.flag_values_dict())
 
 def bootstrap():
-    print('Setting seed')
     maybe_set_seed()
-    print('Seed set')
     initial_checkpoint_name = 'model.ckpt-1'
     save_file = os.path.join(FLAGS.work_dir, initial_checkpoint_name)
-    print('Creating session')
     sess = tf.Session(graph=tf.Graph())
-    print('Session created')
     with sess.graph.as_default():
-        print('Getting inference input')
         features, labels = get_inference_input()
-        print('Inference input created')
-        print('Running model fn')
         model_fn(features, labels, tf.estimator.ModeKeys.PREDICT,
                  params=FLAGS.flag_values_dict())
-        print('Model fn run')
-        print('Running session initializer')
         sess.run(tf.global_variables_initializer())
-        print('Session initializer run')
-        print('Saving session')
         tf.train.Saver().save(sess, save_file)
-        print('Session saved')
 
 def export_model(model_path):
-    print("Creating estimator")
     estimator = tf.estimator.Estimator(model_fn, model_dir=FLAGS.work_dir,
                                        params=FLAGS.flag_values_dict())
-    print("Estimator created")
-    print("Getting latest checkpoint")
     latest_checkpoint = estimator.latest_checkpoint()
-    print("Latest checkpoint found")
-    print("Getting all checkpoint files")
     all_checkpoint_files = tf.gfile.Glob(latest_checkpoint + '*')
-    print("All checkpoint files found")
-    print("Copying checkpoint files")
     for filename in all_checkpoint_files:
         suffix = filename.partition(latest_checkpoint)[2]
         destination_path = model_path + suffix

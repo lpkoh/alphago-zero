@@ -21,6 +21,7 @@ Most of the complexity here is dealing with two features of SGF:
 - Plays don't necessarily alternate colors; they can be repeated B or W moves
   This feature is used to handle free handicap placement.
 """
+
 import numpy as np
 import itertools
 
