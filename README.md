@@ -86,3 +86,10 @@ python3 evaluate.py \
   --num_evaluation_games=30 \
   --num_readouts=200
 ```
+
+### Reinforcement learning loop
+We have a script, rl_loop.py, that will perform the bootstrap initialization and training loop.
+```shell
+python3 rl_loop.py
+```
+After the loop, you can run evaluate.py against any earlier iteration to make sure the model has improved, as expected.
