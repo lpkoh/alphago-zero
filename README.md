@@ -42,6 +42,9 @@ docker build . -t alphago-zero
 
 # Run the container interactively with volume mounting
 docker run -it -v "$(pwd)/volume:/volume" alphago-zero /bin/bash
+
+# Enter volume directory to execute following commands
+cd volume
 ```
 
 ### Bootstrap
