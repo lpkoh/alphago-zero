@@ -25,9 +25,9 @@ Eventually:
 ## Training implementation
 We walk through the implementation of Alphago Zero here. An overview:
 1. Bootstrap initial model: bootstrap.py initializes a model with random weights. Run this once, then run steps 2-3 in a loop until satisfied, then evaluate against previous models.
-2. Self play: selfplay.py
-3. Training: 
-4. Evaluation:
+2. Self play: selfplay.py uses the latest model to play games against itself, generating data.
+3. Training: train.py trains the model on all the cumulative games so far.
+4. Evaluation: evaluate.py evaluates 2 different models
 
 ### Setup
 ```shell
@@ -77,3 +77,12 @@ python3 train.py \
 ```
 
 ### Evaluation
+This command takes 
+```shell
+python3 evaluate.py \
+  --black_model=/volume/outputs/models/000001 \
+  --white_model=/volume/outputs/models/bootstrap \
+  --eval_sgf_dir=/volume/outputs/eval_games \
+  --num_evaluation_games=30 \
+  --num_readouts=200
+```
