@@ -32,13 +32,15 @@ def main():
         
         # Self-play using latest model
         print(f"Starting self-play with model {latest_model}...")
-        subprocess.run([
-            "python3", "selfplay.py",
-            f"--load_file=/volume/outputs/models/{latest_model}",
-            "--selfplay_dir=/volume/outputs/data/selfplay",
-            "--holdout_dir=/volume/outputs/data/holdout",
-            "--sgf_dir=/volume/outputs/sgf"
-        ], check=True)
+        for game in range(100):
+            print(f"Playing game {game + 1}...")
+            subprocess.run([
+                "python3", "selfplay.py",
+                f"--load_file=/volume/outputs/models/{latest_model}",
+                "--selfplay_dir=/volume/outputs/data/selfplay",
+                "--holdout_dir=/volume/outputs/data/holdout",
+                "--sgf_dir=/volume/outputs/sgf"
+            ], check=True)
 
         # Train on all selfplay data
         new_model = f"{iteration+1:06d}"  # 000001, 000002, etc.
