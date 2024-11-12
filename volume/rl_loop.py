@@ -32,7 +32,7 @@ def main():
         
         # Self-play using latest model
         print(f"Starting self-play with model {latest_model}...")
-        for game in range(100):
+        for game in range(50):
             print(f"Playing game {game + 1}...")
             subprocess.run([
                 "python3", "selfplay.py",
