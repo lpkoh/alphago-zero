@@ -1,6 +1,7 @@
 import os
 import subprocess
 import time
+import glob
 
 def main():
     # Create necessary directories
@@ -42,12 +43,16 @@ def main():
         # Train on all selfplay data
         new_model = f"{iteration+1:06d}"  # 000001, 000002, etc.
         print(f"Training model {new_model}...")
-        subprocess.run([
-            "python3", "train.py",
-            "/volume/outputs/data/selfplay/*",
+        # Get all selfplay files
+        selfplay_files = glob.glob("/volume/outputs/data/selfplay/*")
+        # Construct command with expanded file list
+        train_cmd = [
+            "python3", "train.py"
+        ] + selfplay_files + [
             "--work_dir=/volume/work_dir",
             f"--export_path=/volume/outputs/models/{new_model}"
-        ], check=True)
+        ]
+        subprocess.run(train_cmd, check=True)
         
         latest_model = new_model
         print(f"Completed iteration {iteration + 1}, latest model: {latest_model}")
