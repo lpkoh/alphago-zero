@@ -19,11 +19,12 @@ AlphaGo Zero is trained through self-play reinforcement learning, starting from 
 Go through this loop:
 - Self-Play: Generate training data by playing games using the latest model.
 - Train the Neural Network: Train on data generated through self-play.
+Eventually:
 - Evaluate the Neural Network: Assess each new neural network checkpoint against the current best model to ensure high-quality data generation.
 
 ## Training implementation
 We walk through the implementation of Alphago Zero here. An overview:
-1. Bootstrap initial model: bootstrap.py initializes a model with random weights. Run this once, then run steps 2-4 in a loop until satisfied.
+1. Bootstrap initial model: bootstrap.py initializes a model with random weights. Run this once, then run steps 2-3 in a loop until satisfied, then evaluate against previous models.
 2. Self play: selfplay.py
 3. Training: 
 4. Evaluation:
@@ -74,3 +75,5 @@ python3 train.py \
   --work_dir=/volume/work_dir \
   --export_path=/volume/output/models/000001
 ```
+
+### Evaluation
