@@ -28,6 +28,7 @@ We walk through the implementation of Alphago Zero here. An overview:
 2. Self play: selfplay.py uses the latest model to play games against itself, generating data.
 3. Training: train.py trains the model on all the cumulative games so far.
 4. Evaluation: evaluate.py evaluates 2 different models
+Note that we set default num_readouts as 100 and go.N as 9x9 for speed. Alter these in strategies.py and go.py as needed.
 
 ### Setup
 ```shell
