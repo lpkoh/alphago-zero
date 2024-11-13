@@ -2,8 +2,9 @@ import os
 import subprocess
 import time
 import glob
+import argparse
 
-def main():
+def main(start_model=None):
     # Create necessary directories
     dirs = [
         "/volume/work_dir",
@@ -16,18 +17,25 @@ def main():
     for dir_path in dirs:
         os.makedirs(dir_path, exist_ok=True)
 
-    # Bootstrap initial model
-    print("Bootstrapping initial model...")
-    subprocess.run([
-        "python3", "bootstrap.py",
-        "--work_dir=/volume/work_dir",
-        "--export_path=/volume/outputs/models/bootstrap",
-        "--create_bootstrap=True"
-    ], check=True)
+    # Determine starting point
+    if start_model is None:
+        # Path 1: Start from bootstrap
+        print("Bootstrapping initial model...")
+        subprocess.run([
+            "python3", "bootstrap.py",
+            "--work_dir=/volume/work_dir",
+            "--export_path=/volume/outputs/models/bootstrap",
+            "--create_bootstrap=True"
+        ], check=True)
+        latest_model = "bootstrap"
+        start_iteration = 0
+    else:
+        # Path 2: Start from specified model
+        latest_model = start_model
+        # Extract iteration number from model name (e.g., "000014" -> 14)
+        start_iteration = int(start_model)
 
-    # Training loop
-    latest_model = "bootstrap"
-    for iteration in range(1000):
+    for iteration in range(start_iteration, start_iteration + 1000):
         print(f"\nIteration {iteration + 1}/1000")
         
         # Self-play using latest model
@@ -60,4 +68,8 @@ def main():
         print(f"Completed iteration {iteration + 1}, latest model: {latest_model}")
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser(description='Run AlphaGo Zero training loop')
+    parser.add_argument('--start-model', type=str, help='Model number to start from (e.g., 000014)', default=None)
+    args = parser.parse_args()
+    
+    main(args.start_model)
