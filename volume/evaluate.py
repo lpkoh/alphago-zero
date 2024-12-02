@@ -15,45 +15,31 @@
 """Evalation plays games between two neural nets."""
 
 import os
-import time
 from absl import app, flags
-from tensorflow import gfile
-
 import dual_net
 from strategies import MCTSPlayer
-import sgf_wrapper
 import utils
 
-flags.DEFINE_string('eval_sgf_dir', None, 'Where to write evaluation results.')
 flags.DEFINE_string('black_model', None, 'Path to the model for black player')
 flags.DEFINE_string('white_model', None, 'Path to the model for white player')
 flags.DEFINE_integer('num_evaluation_games', 16, 'How many games to play')
-
-# From strategies.py
 flags.declare_key_flag('num_readouts')
-flags.declare_key_flag('verbose')
 
 FLAGS = flags.FLAGS
 
-
-def play_match(black_model, white_model, games, sgf_dir):
+def play_match(black_model, white_model, games):
     """Plays matches between two neural nets.
 
     Args:
         black_model: Path to the model for black player
         white_model: Path to the model for white player
     """
-    with utils.logged_timer("Loading weights"):
-        black_net = dual_net.DualNetwork(black_model)
-        white_net = dual_net.DualNetwork(white_model)
-
-    readouts = FLAGS.num_readouts
+    black_net = dual_net.DualNetwork(black_model)
+    white_net = dual_net.DualNetwork(white_model)
+    results = []
 
     black = MCTSPlayer(black_net, two_player_mode=True)
     white = MCTSPlayer(white_net, two_player_mode=True)
-
-    black_name = os.path.basename(black_net.save_file)
-    white_name = os.path.basename(white_net.save_file)
 
     for i in range(games):
         num_move = 0  # The move number of the current game
@@ -65,63 +51,42 @@ def play_match(black_model, white_model, games, sgf_dir):
             first_node.incorporate_results(prob, val, first_node)
 
         while True:
-            start = time.time()
             active = white if num_move % 2 else black
             inactive = black if num_move % 2 else white
 
             current_readouts = active.root.N
-            while active.root.N < current_readouts + readouts:
+            while active.root.N < current_readouts + FLAGS.num_readouts:
                 active.tree_search()
-
-            # print some stats on the search
-            if FLAGS.verbose >= 3:
-                print(active.root.position)
 
             # First, check the roots for hopeless games.
             if active.should_resign():  # Force resign
-                active.set_result(-1 *
-                                  active.root.position.to_play, was_resign=True)
-                inactive.set_result(
-                    active.root.position.to_play, was_resign=True)
+                active.set_result(-1 * active.root.position.to_play, was_resign=True)
+                inactive.set_result(active.root.position.to_play, was_resign=True)
 
             if active.is_done():
-                fname = "{:d}-{:s}-vs-{:s}-{:d}.sgf".format(int(time.time()),
-                                                            white_name, black_name, i)
                 active.set_result(active.root.position.result(), was_resign=False)
-                with gfile.GFile(os.path.join(sgf_dir, fname), 'w') as _file:
-                    sgfstr = sgf_wrapper.make_sgf(active.position.recent,
-                                                  active.result_string, black_name=black_name,
-                                                  white_name=white_name)
-                    _file.write(sgfstr)
-                print("Finished game", i, active.result_string)
+                # Record result from black's perspective
+                if active.result_string.startswith('B+'):
+                    results.append('win')
+                else:
+                    results.append('lose')
                 break
 
             move = active.pick_move()
             active.play_move(move)
             inactive.play_move(move)
-
-            dur = time.time() - start
             num_move += 1
-
-            if (FLAGS.verbose > 1) or (FLAGS.verbose == 1 and num_move % 10 == 9):
-                timeper = (dur / readouts) * 100.0
-                print(active.root.position)
-                print("%d: %d readouts, %.3f s/100. (%.2f sec)" % (num_move,
-                                                                   readouts,
-                                                                   timeper,
-                                                                   dur))
-
+    
+    return results
 
 def main(argv):
     """Play matches between two neural nets."""
-    utils.ensure_dir_exists(FLAGS.eval_sgf_dir)
-    play_match(FLAGS.black_model, FLAGS.white_model, 
-              FLAGS.num_evaluation_games, FLAGS.eval_sgf_dir)
-
+    results = play_match(FLAGS.black_model, FLAGS.white_model, FLAGS.num_evaluation_games)
+    print(results)
+    return results
 
 if __name__ == '__main__':
     flags.mark_flags_as_required([
-        'eval_sgf_dir',
         'black_model',
         'white_model'
     ])
