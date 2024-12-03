@@ -83,17 +83,19 @@ def main(argv):
     results_dir = '/volume/outputs/comparisons'
     os.makedirs(results_dir, exist_ok=True)
     models_dir = '/volume/outputs/models'
+    cur_model = f"{eval_model_num:06d}"
+    cur_model_path = os.path.join(models_dir, cur_model)
+    eval_results = []
     for i in range(1, eval_model_num):
         prev_model = f"{i:06d}"
         prev_model_path = os.path.join(models_dir, prev_model)
-        cur_model = f"{eval_model_num:06d}"
-        cur_model_path = os.path.join(models_dir, cur_model)
         results = play_match(prev_model, cur_model, FLAGS.num_evaluation_games)
-
-        filename = f"{cur_model}_{prev_model}.txt"
-        filepath = os.path.join(results_dir, filename)
-        with open(filepath, 'w') as f:
-            f.write(f"Total wins: {results.count('win')}")
+        wins = results.count('win')
+        eval_results.append((prev_model, wins))
+    filepath = os.path.join(results_dir, f"eval_{cur_model}.csv")
+    with open(filepath, 'w') as f:
+        for prev_model, wins in eval_results:
+            f.write(f"{prev_model},{wins}\n")
 
 if __name__ == '__main__':
     flags.mark_flags_as_required([
