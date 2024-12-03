@@ -20,8 +20,7 @@ import dual_net
 from strategies import MCTSPlayer
 import utils
 
-flags.DEFINE_string('black_model', None, 'Path to the model for black player')
-flags.DEFINE_string('white_model', None, 'Path to the model for white player')
+flags.DEFINE_string('eval_model', None, 'Path to the model for black player')
 flags.DEFINE_integer('num_evaluation_games', 16, 'How many games to play')
 flags.declare_key_flag('num_readouts')
 
@@ -80,14 +79,24 @@ def play_match(black_model, white_model, games):
     return results
 
 def main(argv):
-    """Play matches between two neural nets."""
-    results = play_match(FLAGS.black_model, FLAGS.white_model, FLAGS.num_evaluation_games)
-    print(results)
-    return results
+    eval_model_num = int(FLAGS.eval_model)
+    results_dir = '/volume/outputs/comparisons'
+    os.makedirs(results_dir, exist_ok=True)
+    models_dir = '/volume/outputs/models'
+    for i in range(1, eval_model_num):
+        prev_model = f"{i:06d}"
+        prev_model_path = os.path.join(models_dir, prev_model)
+        cur_model = f"{eval_model_num:06d}"
+        cur_model_path = os.path.join(models_dir, cur_model)
+        results = play_match(prev_model, cur_model, FLAGS.num_evaluation_games)
+
+        filename = f"{cur_model}_{prev_model}.txt"
+        filepath = os.path.join(results_dir, filename)
+        with open(filepath, 'w') as f:
+            f.write(f"Total wins: {results.count('win')}")
 
 if __name__ == '__main__':
     flags.mark_flags_as_required([
-        'black_model',
-        'white_model'
+        'eval_model'
     ])
     app.run(main)
