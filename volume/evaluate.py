@@ -89,7 +89,7 @@ def main(argv):
     for i in range(1, eval_model_num):
         prev_model = f"{i:06d}"
         prev_model_path = os.path.join(models_dir, prev_model)
-        results = play_match(prev_model, cur_model, FLAGS.num_evaluation_games)
+        results = play_match(prev_model_path, cur_model_path, FLAGS.num_evaluation_games)
         wins = results.count('win')
         eval_results.append((prev_model, wins))
     filepath = os.path.join(results_dir, f"eval_{cur_model}.csv")
