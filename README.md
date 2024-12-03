@@ -77,20 +77,18 @@ python3 train.py \
   --export_path=/volume/outputs/models/000001
 ```
 
-### Evaluation
-This command takes 
-```shell
-python3 evaluate.py \
-  --black_model=/volume/outputs/models/000001 \
-  --white_model=/volume/outputs/models/bootstrap \
-  --eval_sgf_dir=/volume/outputs/eval_games \
-  --num_evaluation_games=30 \
-  --num_readouts=200
-```
-
 ### Reinforcement learning loop
 We have a script, rl_loop.py, that will perform the bootstrap initialization and training loop.
 ```shell
 python3 rl_loop.py
 ```
 After the loop, you can run evaluate.py against any earlier iteration to make sure the model has improved, as expected.
+
+### Evaluation
+This command takes the latest model you trained on, then has it play num_evaluation_games with each of the previous models and outputs the win record in a file in /volume/outputs/comparisons.
+```shell
+python3 evaluate.py \
+  --eval_model=/volume/outputs/models/000106 \ # Or whatever model iteration you trained till
+  --num_evaluation_games=20 \
+  --num_readouts=100
+```
